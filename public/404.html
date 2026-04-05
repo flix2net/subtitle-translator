@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Subtitle Translator</title>
+  <script>
+    // Single Page App routing for GitHub Pages
+    const path = location.pathname;
+    const segments = path.split('/').filter(Boolean);
+    // GitHub Pages adds the repo name as a path segment
+    const locales = ['en','zh','zh-hant','pt','es','hi','ar','fr','de','ja','ko','ru','vi','th','tr','bn','id','it'];
+    // Find the locale segment
+    let localeIdx = -1;
+    for (let i = 0; i < segments.length; i++) {
+      if (locales.includes(segments[i])) { localeIdx = i; break; }
+    }
+    if (localeIdx >= 0) {
+      const newPath = segments.slice(localeIdx).join('/');
+      sessionStorage.setItem('gh_path', '/' + newPath);
+      location.replace('/subtitle-translator/');
+    } else {
+      location.replace('/subtitle-translator/');
+    }
+  </script>
+</head>
+<body>
+  <p>Redirecting...</p>
+</body>
+</html>
