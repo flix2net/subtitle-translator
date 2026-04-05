@@ -123,10 +123,10 @@ export interface HistoryEntry {
 export const addHistoryEntry = async (entry: Omit<HistoryEntry, "id" | "timestamp">): Promise<void> => {
   try {
     const db = await getDb();
-    const id = await db.add(STORE_NAME, {
+    await db.add(STORE_NAME, {
       ...entry,
       timestamp: Date.now(),
-    });
+    } as HistoryDB["translations"]["value"]);
 
     // Clean up old entries if over limit
     const count = await db.count(STORE_NAME);
