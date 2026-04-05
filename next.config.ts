@@ -8,6 +8,9 @@ const isDocker = process.env.DOCKER_BUILD === "true";
 
 const nextConfig: NextConfig = {
   output: isDocker ? "standalone" : "export",
+  basePath: "/subtitle-translator",
+  assetPrefix: "/subtitle-translator/",
+  trailingSlash: true,
   images: {
     unoptimized: true,
   },

@@ -4,10 +4,9 @@
   <meta charset="utf-8">
   <title>Subtitle Translator</title>
   <script>
-    // Single Page App routing for GitHub Pages
-    const path = location.pathname;
+    // SPA routing for GitHub Pages with basePath
+    const path = location.pathname.replace('/subtitle-translator', '');
     const segments = path.split('/').filter(Boolean);
-    // GitHub Pages adds the repo name as a path segment
     const locales = ['en','zh','zh-hant','pt','es','hi','ar','fr','de','ja','ko','ru','vi','th','tr','bn','id','it'];
     // Find the locale segment
     let localeIdx = -1;
@@ -15,11 +14,9 @@
       if (locales.includes(segments[i])) { localeIdx = i; break; }
     }
     if (localeIdx >= 0) {
-      const newPath = segments.slice(localeIdx).join('/');
-      sessionStorage.setItem('gh_path', '/' + newPath);
-      location.replace('/subtitle-translator/');
+      location.replace('/subtitle-translator/' + segments.slice(localeIdx).join('/') + '/');
     } else {
-      location.replace('/subtitle-translator/');
+      location.replace('/subtitle-translator/en/');
     }
   </script>
 </head>
