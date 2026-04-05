@@ -337,6 +337,7 @@ export const nvidia: TranslationService = async (params) => {
   const prompt = getAIModelPrompt(text, effectiveUserPrompt, targetLanguage, sourceLanguage, params.fullText);
 
   const effectiveModel = model || defaultConfigs.nvidia.model;
+  const effectiveUrl = url?.trim() || defaultConfigs.nvidia.url;
 
   // Build thinking parameters based on model
   const thinkingParams = buildNvidiaThinkingParams(effectiveModel, enableThinking ?? false);
@@ -349,15 +350,18 @@ export const nvidia: TranslationService = async (params) => {
     ],
     model: effectiveModel,
     temperature: normalizeNumber(temperature, defaultConfigs.nvidia.temperature),
+    stream: false,
     ...thinkingParams,
   };
 
-  // If user provided a custom URL, call it directly (no proxy)
-  // Otherwise, use proxy to call the default Nvidia API
-  if (url) {
-    // Direct call to user's custom URL (e.g., private deployment)
-    const key = requireApiKey("Nvidia", apiKey);
-    const response = await fetch(url, {
+  const key = requireApiKey("Nvidia", apiKey);
+
+  // If URL starts with http, call it directly (OpenAI-compatible)
+  // Otherwise use proxy for CORS
+  const isDirectUrl = effectiveUrl.startsWith("http");
+
+  if (isDirectUrl) {
+    const response = await fetch(effectiveUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -466,4 +470,109 @@ export const claude: TranslationService = async (params) => {
     throw new Error(getErrorMessage(data, response.status));
   }
   return getClaudeContent(data, isThinking);
+};
+
+export const mistral: TranslationService = async (params) => {
+  const { text, targetLanguage, sourceLanguage, apiKey, model, temperature, sysPrompt, userPrompt } = params;
+  const effectiveSysPrompt = normalizePrompt(sysPrompt, DEFAULT_SYS_PROMPT);
+  const effectiveUserPrompt = normalizePrompt(userPrompt, DEFAULT_USER_PROMPT);
+  const prompt = getAIModelPrompt(text, effectiveUserPrompt, targetLanguage, sourceLanguage, params.fullText);
+
+  const key = requireApiKey("Mistral AI", apiKey);
+
+  const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${key}`,
+    },
+    body: JSON.stringify({
+      model: model || defaultConfigs.mistral.model,
+      messages: [
+        { role: "system", content: effectiveSysPrompt },
+        { role: "user", content: prompt },
+      ],
+      temperature: normalizeNumber(temperature, defaultConfigs.mistral.temperature),
+      stream: false,
+    }),
+    signal: params.signal,
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(getErrorMessage(data, response.status));
+  }
+  return getOpenAICompatContent(data, "Mistral AI");
+};
+
+export const cohere: TranslationService = async (params) => {
+  const { text, targetLanguage, sourceLanguage, apiKey, model, temperature, sysPrompt, userPrompt } = params;
+  const effectiveSysPrompt = normalizePrompt(sysPrompt, DEFAULT_SYS_PROMPT);
+  const effectiveUserPrompt = normalizePrompt(userPrompt, DEFAULT_USER_PROMPT);
+  const prompt = getAIModelPrompt(text, effectiveUserPrompt, targetLanguage, sourceLanguage, params.fullText);
+
+  const key = requireApiKey("Cohere", apiKey);
+
+  const response = await fetch("https://api.cohere.ai/v2/chat", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${key}`,
+    },
+    body: JSON.stringify({
+      model: model || defaultConfigs.cohere.model,
+      messages: [
+        { role: "system", content: effectiveSysPrompt },
+        { role: "user", content: prompt },
+      ],
+      temperature: normalizeNumber(temperature, defaultConfigs.cohere.temperature),
+      stream: false,
+    }),
+    signal: params.signal,
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(getErrorMessage(data, response.status));
+  }
+
+  // Cohere v2 API response format
+  const content = (data as { message?: { content?: string } } | null)?.message?.content;
+  if (typeof content !== "string" || !content.trim()) {
+    throw new Error("Invalid response format from Cohere API");
+  }
+  return content.trim();
+};
+
+export const xai: TranslationService = async (params) => {
+  const { text, targetLanguage, sourceLanguage, apiKey, model, temperature, sysPrompt, userPrompt } = params;
+  const effectiveSysPrompt = normalizePrompt(sysPrompt, DEFAULT_SYS_PROMPT);
+  const effectiveUserPrompt = normalizePrompt(userPrompt, DEFAULT_USER_PROMPT);
+  const prompt = getAIModelPrompt(text, effectiveUserPrompt, targetLanguage, sourceLanguage, params.fullText);
+
+  const key = requireApiKey("xAI Grok", apiKey);
+
+  const response = await fetch("https://api.x.ai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${key}`,
+    },
+    body: JSON.stringify({
+      messages: [
+        { role: "system", content: effectiveSysPrompt },
+        { role: "user", content: prompt },
+      ],
+      model: model || defaultConfigs.xai.model,
+      temperature: normalizeNumber(temperature, defaultConfigs.xai.temperature),
+      stream: false,
+    }),
+    signal: params.signal,
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(getErrorMessage(data, response.status));
+  }
+  return getOpenAICompatContent(data, "xAI Grok");
 };

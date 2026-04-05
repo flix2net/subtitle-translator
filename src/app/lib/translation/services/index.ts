@@ -14,6 +14,7 @@ export const translationServices: Record<string, TranslationService> = {
   azure: traditional.azure,
   webgoogletranslate: traditional.webgoogletranslate,
   qwenMt: traditional.qwenMt,
+  libretranslate: traditional.libretranslate,
 
   // LLM APIs
   deepseek: llm.deepseek,
@@ -26,6 +27,9 @@ export const translationServices: Record<string, TranslationService> = {
   groq: llm.groq,
   openrouter: llm.openrouter,
   nvidia: llm.nvidia,
+  mistral: llm.mistral,
+  cohere: llm.cohere,
+  xai: llm.xai,
   llm: llm.llm,
 };
 

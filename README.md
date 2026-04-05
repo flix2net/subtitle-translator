@@ -1,89 +1,174 @@
-<h1 align="center">
-⚡️ Subtitle Translator
-</h1>
-<p align="center">
-    English | <a href="./README-zh.md">中文</a>
-</p>
-<p align="center">
-    <em>Blazing-fast batch subtitle translation for 50+ languages — powered by AI</em>
-</p>
+# Subtitle Translator
 
-<p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
-  <a href="https://tools.newzone.top/en/subtitle-translator"><img src="https://img.shields.io/badge/Live%20Demo-subtitle--translator-blue" alt="Live Demo"></a>
-</p>
+A blazing-fast, AI-powered batch subtitle translation tool that supports `.srt`, `.ass`, `.vtt`, and `.lrc` formats. Fork of [rockbenben/subtitle-translator](https://github.com/rockbenben/subtitle-translator) with enhanced API support, UI improvements, and powerful subtitle editing features.
 
-**Subtitle Translator** is a batch subtitle translation tool supporting `.srt`, `.ass`, `.vtt`, and `.lrc` formats. With **real-time translation speeds**, it leverages multiple **translation APIs and AI models** to quickly translate subtitle files into **50+ languages**, including the ability to **translate a single file into multiple languages at once** for global accessibility.
+## Features
 
-👉 **Try it online**: <https://tools.newzone.top/en/subtitle-translator>
+- **Real-time translation** (~1 sec/episode) via chunked compression and parallel processing
+- **Batch processing** for hundreds of subtitle files
+- **50+ languages** with simultaneous multi-language translation
+- **Context-aware AI translation** for natural dialogue
+- **Bilingual output** with adjustable positioning
+- **Subtitle extraction** for clean text export
 
-## Key Features
+### New Features (This Fork)
 
-![Batch Translation Demo](https://img.newzone.top/subtile-translator.gif?imageMogr2/format/webp)
+#### Additional Translation APIs
+- **NVIDIA NIM** - Now defaults to `meta/llama-3.3-70b-instruct` via `integrate.api.nvidia.com`
+- **Mistral AI** - `mistral-large-latest`, `codestral-latest`, etc.
+- **Cohere** - `command-r-plus` and variants
+- **xAI Grok** - `grok-3-latest`, `grok-3-fast`, `grok-3-mini`
+- **LibreTranslate** - Free, self-hosted open-source translation
 
-- **Real-time Translation**: Uses **chunked compression** and **parallel processing** to achieve **1-second translation per episode**.
-- **Batch Processing**: Handles **hundreds of subtitle files at once**, significantly boosting efficiency.
-- **High-Performance Caching (IndexedDB)**: Stores translation results in **IndexedDB** with **unlimited capacity**—no more browser storage limits.
-- **Context-Aware Translation** (AI models only): Translates with surrounding context for more coherent dialogue.
-- **Format Compatibility**: **Automatically detects** `.srt`, `.ass`, `.vtt`, and `.lrc` formats, preserving original file names.
-- **Bilingual Output**: Insert translations below original text with adjustable positioning.
-- **Subtitle Extraction**: Export clean text for AI summarization, content repurposing, and more.
-- **Multi-language Support**: Translate into **50+ languages** simultaneously from a single file.
+#### UI/UX Enhancements
+- **API badges** - Free ⭐, Recommended, and tier indicators
+- **Model presets** - One-click popular model selection per provider
+- **Custom endpoint support** - Configure any OpenAI-compatible endpoint
+- **Improved dark mode** - Better contrast and smoother transitions
 
-## Translation APIs
+#### Subtitle Tools
+- **Timestamp shifting** - Delay/advance all timestamps by ±N ms
+- **Merge lines** - Combine short consecutive subtitles
+- **Split lines** - Auto-split long subtitles at word boundaries
+- **Glossary support** - Define custom terminology mappings
+- **Translation history** - Browse recent translations in IndexedDB
 
-Subtitle Translator supports **5 translation APIs** and **9 AI LLM models**:
+## Quick Start
 
-### Traditional APIs
+### Prerequisites
 
-| API                  | Quality | Stability | Free Tier                        |
-| -------------------- | ------- | --------- | -------------------------------- |
-| **DeepL (X)**        | ★★★★★   | ★★★★☆     | 500K chars/month                 |
-| **Google Translate** | ★★★★☆   | ★★★★★     | 500K chars/month                 |
-| **Azure Translate**  | ★★★★☆   | ★★★★★     | 2M chars/month (first 12 months) |
-| **GTX API (Free)**   | ★★★☆☆   | ★★★☆☆     | Free (rate-limited)              |
-| **GTX Web (Free)**   | ★★★☆☆   | ★★☆☆☆     | Free                             |
+- Node.js >= 20.9.0
+- Yarn or npm
 
-### LLM Models
+### Local Development
 
-Supports **DeepSeek**, **OpenAI**, **Gemini**, **Azure OpenAI**, **Siliconflow**, **Groq**, **OpenRouter**, **Perplexity**, and **Custom LLM**.
+```bash
+# Clone the repository
+git clone https://github.com/YOUR_USERNAME/subtitle-translator.git
+cd subtitle-translator
 
-- **Best for**: Literary works, technical documents, and multilingual dialogue.
-- **Customization**: Configure **system prompts** and **user prompts** for personalized translation styles.
-- **Temperature Control**: Adjust AI creativity (0–1 scale).
+# Install dependencies
+yarn install
 
-## Context-Aware Translation
+# Start development server
+yarn dev
+```
 
-_Context-Aware Translation_ (AI models only) sends subtitles to the LLM in batches with preceding and succeeding context, ensuring more coherent character dialogue and natural tone.
+Open [http://localhost:3000](http://localhost:3000) to view the app.
 
-Two key parameters control this process:
+### Build for Production
 
-- **Concurrent Lines**: Maximum lines translated simultaneously (default: 20). Too high may trigger rate limits.
-- **Context Lines**: Lines included per batch for context (default: 50). Higher values improve coherence but may exceed token limits.
+```bash
+yarn build
+yarn start
+```
 
-⚠️ **Tip**: Models under 70B parameters may produce misaligned output. Mainstream online large models are recommended.
+## Self-Hosting
 
-## Subtitle Format Support
+### Docker Compose (Recommended)
 
-- **Bilingual Subtitles**: Translated text inserted below original; position adjustable (top/bottom).
-- **Timeline Compatibility**: Supports 100+ hour timestamps and 1–3 digit millisecond formats.
-- **Automatic Encoding Detection**: Prevents character encoding issues automatically.
+```bash
+# Start subtitle translator + optional LibreTranslate
+docker-compose up -d
 
-## Translation Modes
+# View logs
+docker-compose logs -f subtitle-translator
 
-- **Batch Mode (Default)**: Process hundreds of files simultaneously; results auto-download.
-- **Single-File Mode**: Quick translation with instant preview; each upload replaces the previous.
+# Stop
+docker-compose down
+```
 
-## Documentation & Deployment
+Access at `http://localhost:3000`.
 
-For detailed configuration, API setup, and self-hosting instructions, see the **[Official Documentation](https://docs.newzone.top/en/guide/translation/subtitle-translator/)**.
+### Docker Only
 
-**Quick Deployment**: [Deploy Guide](https://docs.newzone.top/en/guide/translation/subtitle-translator/deploy.html)
+```bash
+docker build -t subtitle-translator .
+docker run -p 3000:3000 subtitle-translator
+```
 
-## Contributing
+### Deploy to Vercel
 
-Contributions are welcome! Feel free to open issues and pull requests.
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FYOUR_USERNAME%2Fsubtitle-translator)
+
+## Supported Translation APIs
+
+### Free
+- **GTX API** - Google Translate free endpoint
+- **DeepLX** - Community DeepL proxy
+- **LibreTranslate** - Self-hosted open-source
+
+### Paid (LLM Models)
+| Provider | Default Model | API Key |
+|----------|--------------|---------|
+| **NVIDIA NIM** ⭐ | `meta/llama-3.3-70b-instruct` | [build.nvidia.com](https://build.nvidia.com/) |
+| **DeepSeek** ⭐ | `deepseek-chat` | [platform.deepseek.com](https://platform.deepseek.com/api_keys) |
+| **OpenAI** | `gpt-5.4-mini` | [platform.openai.com](https://platform.openai.com/api-keys) |
+| **Gemini** ⭐ | `gemini-2.5-flash` | [aistudio.google.com](https://aistudio.google.com/app/api-keys) |
+| **Claude** | `claude-sonnet-4-6` | [console.anthropic.com](https://console.anthropic.com/settings/keys) |
+| **Mistral AI** | `mistral-large-latest` | [console.mistral.ai](https://console.mistral.ai/api-keys/) |
+| **Cohere** | `command-r-plus` | [dashboard.cohere.com](https://dashboard.cohere.com/api-keys) |
+| **xAI Grok** | `grok-3-latest` | [console.x.ai](https://console.x.ai/) |
+| **Groq** ⭐ | `openai/gpt-oss-20b` | [console.groq.com](https://console.groq.com/keys) |
+| **Perplexity** | `sonar` | [perplexity.ai](https://www.perplexity.ai/account/api/keys) |
+| **OpenRouter** | `nvidia/nemotron-3-super-120b-a12b:free` | [openrouter.ai](https://openrouter.ai/settings/keys) |
+
+⭐ = Recommended for subtitle translation quality
+
+## Subtitle Tools
+
+### Timestamp Shifting
+Delay or advance all subtitle timestamps by a specified number of milliseconds. Useful when subtitles are out of sync with your video.
+
+- **Positive value**: Delay subtitles (shift forward)
+- **Negative value**: Advance subtitles (shift backward)
+
+### Merge Lines
+Combine consecutive short subtitle lines into a single entry. Helps reduce flickering and improves readability for fast dialogue.
+
+### Split Lines
+Automatically split long subtitle lines (>60 chars) at natural word boundaries. Ensures subtitles fit properly on screen.
+
+### Glossary
+Define custom terminology mappings (e.g., character names, technical terms) that will be applied before translation to ensure consistency.
+
+## Configuration
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NODE_ENV` | Environment | `production` |
+| `NEXT_PUBLIC_USE_LOCAL_API` | Use local API routes (Docker) | `false` |
+
+### API Key Setup
+
+All API keys can be entered directly in the app UI. They are stored in your browser's local storage and never sent to any server except the respective API provider.
+
+## CI/CD
+
+This project uses GitHub Actions for automated testing and deployment:
+
+- **On PR**: Lint check + build verification
+- **On merge to main**: Docker image built and pushed to GHCR
+
+```bash
+# Manual Docker pull
+docker pull ghcr.io/YOUR_USERNAME/subtitle-translator:latest
+```
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router)
+- **UI**: Ant Design 6 + Tailwind CSS v4
+- **i18n**: next-intl (18 languages)
+- **Storage**: IndexedDB (via idb) + localStorage
+- **Deployment**: Docker, Vercel, GitHub Actions
 
 ## License
 
-MIT © 2025 [rockbenben](https://github.com/rockbenben). See [LICENSE](./LICENSE).
+MIT
+
+## Credits
+
+Original project by [rockbenben/subtitle-translator](https://github.com/rockbenben/subtitle-translator). This fork adds new API providers, UI enhancements, and subtitle editing tools.

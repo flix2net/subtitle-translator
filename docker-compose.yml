@@ -1,0 +1,40 @@
+services:
+  subtitle-translator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: subtitle-translator
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      # Optional: Set your API keys here or use the UI
+      # - DEEPL_API_KEY=
+      # - OPENAI_API_KEY=
+      # - NVIDIA_API_KEY=
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Self-hosted LibreTranslate instance for free translations
+  libretranslate:
+    image: libretranslate/libretranslate:latest
+    container_name: libretranslate
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - LT_API_KEYS=true
+      - LT_API_KEYS_DB_PATH=/app/db/api_keys.db
+      - LT_UPDATE_MODELS=true
+    volumes:
+      - libretranslate_data:/app/db
+      - libretranslate_models:/home/libretranslate/.local
+
+volumes:
+  libretranslate_data:
+  libretranslate_models:

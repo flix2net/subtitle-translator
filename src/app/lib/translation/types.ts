@@ -5,6 +5,8 @@ export interface TranslationServiceInfo {
   label: string;
   docs?: string;
   apiKeyUrl?: string;
+  tier?: "free" | "paid" | "custom";
+  recommended?: boolean;
 }
 
 export type TranslationMethod = string;

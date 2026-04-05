@@ -258,3 +258,228 @@ Style: Secondary,Noto Sans,55,&H003CF7F4,&H000000FF,&H00000000,&H00000000,0,0,0,
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`;
+
+// ==========================================
+// Phase 4: Timing Adjustment & Merge/Split
+// ==========================================
+
+/**
+ * Shift all subtitle timestamps by a given offset (in milliseconds).
+ * Positive = delay, Negative = advance.
+ * Supports SRT, VTT, and ASS formats.
+ */
+export const shiftTimestamps = (content: string, offsetMs: number): string => {
+  if (offsetMs === 0 || !content.trim()) return content;
+
+  const lines = content.split("\n");
+  const shiftedLines = lines.map((line) => {
+    const trimmed = line.trim();
+
+    // SRT/VTT time shift: 00:01:32,783 --> 00:01:35,123
+    if (VTT_SRT_TIME.test(trimmed)) {
+      return trimmed.replace(
+        /((?:\d+:)?\d{2}:\d{2}[,.]\d{1,3})\s*-->\s*((?:\d+:)?\d{2}:\d{2}[,.]\d{1,3})/,
+        (_match, start, end) => {
+          const newStart = shiftTime(start, offsetMs);
+          const newEnd = shiftTime(end, offsetMs);
+          return `${newStart} --> ${newEnd}`;
+        }
+      );
+    }
+
+    // ASS Dialogue line time shift
+    if (/^Dialogue:\s*\d+,/.test(trimmed)) {
+      const commaIdx = trimmed.indexOf(",");
+      const startCommaIdx = trimmed.indexOf(",", commaIdx + 1);
+      const endCommaIdx = trimmed.indexOf(",", startCommaIdx + 1);
+      if (startCommaIdx !== -1 && endCommaIdx !== -1) {
+        const startTime = trimmed.substring(commaIdx + 1, startCommaIdx).trim();
+        const endTime = trimmed.substring(startCommaIdx + 1, endCommaIdx).trim();
+        const newStart = shiftTimeAss(startTime, offsetMs);
+        const newEnd = shiftTimeAss(endTime, offsetMs);
+        return line.replace(startTime, newStart).replace(endTime, newEnd);
+      }
+    }
+
+    // LRC time shift: [00:12.34]
+    if (LRC_TIME_REGEX.test(trimmed)) {
+      return trimmed.replace(LRC_TIME_REGEX, (match) => {
+        const timeMatch = match.match(/\[(\d{2}):(\d{2})(?:\.(\d{2,3}))?\]/);
+        if (!timeMatch) return match;
+        const mins = parseInt(timeMatch[1], 10);
+        const secs = parseInt(timeMatch[2], 10);
+        const ms = timeMatch[3] ? parseInt(timeMatch[3].padEnd(3, "0"), 10) : 0;
+        const totalMs = mins * 60 * 1000 + secs * 1000 + ms + offsetMs;
+        if (totalMs < 0) return match;
+        const newMins = Math.floor(totalMs / 60000);
+        const newSecs = Math.floor((totalMs % 60000) / 1000);
+        const newMs = Math.floor((totalMs % 1000) / 10);
+        return `[${String(newMins).padStart(2, "0")}:${String(newSecs).padStart(2, "0")}.${String(newMs).padStart(2, "0")}]`;
+      });
+    }
+
+    return line;
+  });
+
+  return shiftedLines.join("\n");
+};
+
+/**
+ * Shift an SRT/VTT time string by offsetMs.
+ */
+const shiftTime = (time: string, offsetMs: number): string => {
+  const match = time.match(/^((\d+):)?(\d{2}):(\d{2})[,.](\d{1,3})$/);
+  if (!match) return time;
+  const hours = parseInt(match[2] || "0", 10);
+  const mins = parseInt(match[3], 10);
+  const secs = parseInt(match[4], 10);
+  const ms = parseInt(match[5].padEnd(3, "0"), 10);
+  const totalMs = hours * 3600000 + mins * 60000 + secs * 1000 + ms + offsetMs;
+  if (totalMs < 0) return time;
+  const newHours = Math.floor(totalMs / 3600000);
+  const newMins = Math.floor((totalMs % 3600000) / 60000);
+  const newSecs = Math.floor((totalMs % 60000) / 1000);
+  const newMs = Math.floor((totalMs % 1000) / 10);
+  const sep = time.includes(",") ? "," : ".";
+  return `${String(newHours).padStart(2, "0")}:${String(newMins).padStart(2, "0")}:${String(newSecs).padStart(2, "0")}${sep}${String(newMs).padStart(2, "0")}`;
+};
+
+/**
+ * Shift an ASS time string by offsetMs.
+ */
+const shiftTimeAss = (time: string, offsetMs: number): string => {
+  const match = time.match(/^(\d+):(\d{2}):(\d{2})\.(\d{2})$/);
+  if (!match) return time;
+  const hours = parseInt(match[1], 10);
+  const mins = parseInt(match[2], 10);
+  const secs = parseInt(match[3], 10);
+  const cs = parseInt(match[4], 10); // centiseconds
+  const totalMs = hours * 3600000 + mins * 60000 + secs * 1000 + cs * 10 + offsetMs;
+  if (totalMs < 0) return time;
+  const newHours = Math.floor(totalMs / 3600000);
+  const newMins = Math.floor((totalMs % 3600000) / 60000);
+  const newSecs = Math.floor((totalMs % 60000) / 1000);
+  const newCs = Math.floor((totalMs % 1000) / 10);
+  return `${newHours}:${String(newMins).padStart(2, "0")}:${String(newSecs).padStart(2, "0")}.${String(newCs).padStart(2, "0")}`;
+};
+
+/**
+ * Merge short consecutive subtitle lines into a single line.
+ * Lines separated by less than maxGapMs are merged.
+ * Returns the merged subtitle content.
+ */
+export const mergeSubtitleLines = (content: string, maxGapMs: number = 300): string => {
+  const lines = content.split("\n");
+  const fileType = detectSubtitleFormat(lines);
+  if (fileType === "error") return content;
+
+  const { contentLines, contentIndices, styleBlockLines, assContentStartIndex } = filterSubLines(lines, fileType);
+  if (contentLines.length <= 1) return content;
+
+  // Group consecutive content lines and check time gaps
+  const groups: { indices: number[]; texts: string[] }[] = [];
+  let currentGroup = { indices: [contentIndices[0]], texts: [contentLines[0]] };
+
+  for (let i = 1; i < contentIndices.length; i++) {
+    const prevIdx = contentIndices[i - 1];
+    const currIdx = contentIndices[i];
+
+    // Check if lines are consecutive (no time gap or small gap)
+    const gap = currIdx - prevIdx;
+    if (gap <= maxGapMs) {
+      currentGroup.indices.push(currIdx);
+      currentGroup.texts.push(contentLines[i]);
+    } else {
+      groups.push(currentGroup);
+      currentGroup = { indices: [currIdx], texts: [contentLines[i]] };
+    }
+  }
+  groups.push(currentGroup);
+
+  // Rebuild subtitle with merged lines
+  const resultLines = [...lines];
+  for (const group of groups) {
+    if (group.texts.length > 1) {
+      const mergedText = group.texts.join(" ");
+      for (let i = 0; i < group.indices.length; i++) {
+        if (i === 0) {
+          resultLines[group.indices[i]] = mergedText;
+        } else {
+          resultLines[group.indices[i]] = "";
+        }
+      }
+    }
+  }
+
+  return resultLines.filter((l) => l.trim() !== "" || /^[\d[\s:,-]*$/.test(l.trim()) || l.startsWith("[") || l.startsWith("WEBVTT")).join("\n");
+};
+
+/**
+ * Split long subtitle lines (> maxChars) into two separate entries.
+ * Splits at the nearest space or punctuation.
+ */
+export const splitSubtitleLines = (content: string, maxChars: number = 60): string => {
+  const lines = content.split("\n");
+  const fileType = detectSubtitleFormat(lines);
+  if (fileType === "error") return content;
+
+  const { contentLines, contentIndices } = filterSubLines(lines, fileType);
+
+  const resultLines = [...lines];
+
+  // Process from bottom to top to avoid index shifting issues
+  for (let i = contentIndices.length - 1; i >= 0; i--) {
+    const lineIdx = contentIndices[i];
+    const text = contentLines[i];
+
+    if (text.length > maxChars) {
+      // Find best split point (prefer space, then punctuation)
+      const halfLen = Math.floor(text.length / 2);
+      let splitIdx = -1;
+
+      // Search for space near the middle
+      for (let offset = 0; offset < 20; offset++) {
+        const forwardIdx = halfLen + offset;
+        if (forwardIdx < text.length && text[forwardIdx] === " ") {
+          splitIdx = forwardIdx;
+          break;
+        }
+        const backwardIdx = halfLen - offset;
+        if (backwardIdx >= 0 && text[backwardIdx] === " ") {
+          splitIdx = backwardIdx;
+          break;
+        }
+      }
+
+      // If no space found, try punctuation
+      if (splitIdx === -1) {
+        for (let offset = 0; offset < 15; offset++) {
+          const forwardIdx = halfLen + offset;
+          if (forwardIdx < text.length && /[,.，。、;；]/.test(text[forwardIdx])) {
+            splitIdx = forwardIdx + 1;
+            break;
+          }
+        }
+      }
+
+      if (splitIdx > 0) {
+        const part1 = text.substring(0, splitIdx).trim();
+        const part2 = text.substring(splitIdx).trim();
+
+        if (fileType === "srt" || fileType === "vtt") {
+          // For SRT/VTT, join with \N for inline split
+          resultLines[lineIdx] = `${part1}\\N${part2}`;
+        } else if (fileType === "ass") {
+          resultLines[lineIdx] = resultLines[lineIdx].replace(
+            new RegExp(`,${text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`),
+            `,${part1}\\N${part2}`
+          );
+        } else {
+          resultLines[lineIdx] = `${part1} / ${part2}`;
+        }
+      }
+    }
+  }
+
+  return resultLines.join("\n");
+};

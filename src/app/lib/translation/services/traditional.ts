@@ -226,3 +226,41 @@ export const qwenMt: TranslationService = async (params) => {
   }
   return getOpenAICompatContent(data, "Qwen-MT");
 };
+
+export const libretranslate: TranslationService = async (params) => {
+  const { text, targetLanguage, sourceLanguage, apiKey, url } = params;
+  const apiEndpoint = url?.trim() || defaultConfigs.libretranslate.url;
+
+  const requestBody: Record<string, unknown> = {
+    q: text,
+    source: sourceLanguage !== "auto" ? sourceLanguage : "auto",
+    target: targetLanguage,
+    format: "text",
+  };
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (apiKey?.trim()) {
+    headers.Authorization = `Bearer ${apiKey}`;
+  }
+
+  const response = await fetch(`${apiEndpoint}/translate`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(requestBody),
+    signal: params.signal,
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(getErrorMessage(data, response.status));
+  }
+
+  const translatedText = (data as { translatedText?: string } | null)?.translatedText;
+  if (typeof translatedText !== "string") {
+    throw new Error("Invalid response format from LibreTranslate API");
+  }
+  return translatedText;
+};
