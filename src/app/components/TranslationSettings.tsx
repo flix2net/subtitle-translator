@@ -236,6 +236,12 @@ const ServiceSettingsTab = ({ service }: { service: string }) => {
             </Form.Item>
           )}
 
+          {["nvidia", "mistral", "cohere", "xai"].includes(service) && (
+            <Form.Item label={t("useRelay")} extra={t("useRelayTooltip")}>
+              <Switch checked={config?.useRelay as boolean | undefined} onChange={(checked) => handleConfigChange(service, "useRelay", checked)} aria-label={t("useRelay")} />
+            </Form.Item>
+          )}
+
           {service === "nvidia" && (
             <Form.Item label={t("enableThinking")} extra={t("enableThinkingTooltip")}>
               <Switch checked={config?.enableThinking as boolean | undefined} onChange={(checked) => handleConfigChange(service, "enableThinking", checked)} aria-label={t("enableThinking")} />

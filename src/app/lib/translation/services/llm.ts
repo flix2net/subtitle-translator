@@ -473,28 +473,44 @@ export const claude: TranslationService = async (params) => {
 };
 
 export const mistral: TranslationService = async (params) => {
-  const { text, targetLanguage, sourceLanguage, apiKey, model, temperature, sysPrompt, userPrompt } = params;
+  const { text, targetLanguage, sourceLanguage, apiKey, url, model, temperature, sysPrompt, userPrompt, useRelay } = params;
   const effectiveSysPrompt = normalizePrompt(sysPrompt, DEFAULT_SYS_PROMPT);
   const effectiveUserPrompt = normalizePrompt(userPrompt, DEFAULT_USER_PROMPT);
   const prompt = getAIModelPrompt(text, effectiveUserPrompt, targetLanguage, sourceLanguage, params.fullText);
 
   const key = requireApiKey("Mistral AI", apiKey);
 
-  const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
+  // Use proxy for CORS bypass
+  const apiUrl = useRelay ? PROXY_ENDPOINTS.mistral : "https://api.mistral.ai/v1/chat/completions";
+
+  const response = await fetch(apiUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${key}`,
+      ...(useRelay ? {} : { Authorization: `Bearer ${key}` }),
     },
-    body: JSON.stringify({
-      model: model || defaultConfigs.mistral.model,
-      messages: [
-        { role: "system", content: effectiveSysPrompt },
-        { role: "user", content: prompt },
-      ],
-      temperature: normalizeNumber(temperature, defaultConfigs.mistral.temperature),
-      stream: false,
-    }),
+    body: JSON.stringify(
+      useRelay
+        ? {
+            apiKey,
+            messages: [
+              { role: "system", content: effectiveSysPrompt },
+              { role: "user", content: prompt },
+            ],
+            model: model || defaultConfigs.mistral.model,
+            temperature: normalizeNumber(temperature, defaultConfigs.mistral.temperature),
+            stream: false,
+          }
+        : {
+            model: model || defaultConfigs.mistral.model,
+            messages: [
+              { role: "system", content: effectiveSysPrompt },
+              { role: "user", content: prompt },
+            ],
+            temperature: normalizeNumber(temperature, defaultConfigs.mistral.temperature),
+            stream: false,
+          },
+    ),
     signal: params.signal,
   });
 
@@ -506,28 +522,44 @@ export const mistral: TranslationService = async (params) => {
 };
 
 export const cohere: TranslationService = async (params) => {
-  const { text, targetLanguage, sourceLanguage, apiKey, model, temperature, sysPrompt, userPrompt } = params;
+  const { text, targetLanguage, sourceLanguage, apiKey, url, model, temperature, sysPrompt, userPrompt, useRelay } = params;
   const effectiveSysPrompt = normalizePrompt(sysPrompt, DEFAULT_SYS_PROMPT);
   const effectiveUserPrompt = normalizePrompt(userPrompt, DEFAULT_USER_PROMPT);
   const prompt = getAIModelPrompt(text, effectiveUserPrompt, targetLanguage, sourceLanguage, params.fullText);
 
   const key = requireApiKey("Cohere", apiKey);
 
-  const response = await fetch("https://api.cohere.ai/v2/chat", {
+  // Use proxy for CORS bypass
+  const apiUrl = useRelay ? PROXY_ENDPOINTS.cohere : "https://api.cohere.ai/v2/chat";
+
+  const response = await fetch(apiUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${key}`,
+      ...(useRelay ? {} : { Authorization: `Bearer ${key}` }),
     },
-    body: JSON.stringify({
-      model: model || defaultConfigs.cohere.model,
-      messages: [
-        { role: "system", content: effectiveSysPrompt },
-        { role: "user", content: prompt },
-      ],
-      temperature: normalizeNumber(temperature, defaultConfigs.cohere.temperature),
-      stream: false,
-    }),
+    body: JSON.stringify(
+      useRelay
+        ? {
+            apiKey,
+            messages: [
+              { role: "system", content: effectiveSysPrompt },
+              { role: "user", content: prompt },
+            ],
+            model: model || defaultConfigs.cohere.model,
+            temperature: normalizeNumber(temperature, defaultConfigs.cohere.temperature),
+            stream: false,
+          }
+        : {
+            model: model || defaultConfigs.cohere.model,
+            messages: [
+              { role: "system", content: effectiveSysPrompt },
+              { role: "user", content: prompt },
+            ],
+            temperature: normalizeNumber(temperature, defaultConfigs.cohere.temperature),
+            stream: false,
+          },
+    ),
     signal: params.signal,
   });
 
@@ -545,28 +577,44 @@ export const cohere: TranslationService = async (params) => {
 };
 
 export const xai: TranslationService = async (params) => {
-  const { text, targetLanguage, sourceLanguage, apiKey, model, temperature, sysPrompt, userPrompt } = params;
+  const { text, targetLanguage, sourceLanguage, apiKey, url, model, temperature, sysPrompt, userPrompt, useRelay } = params;
   const effectiveSysPrompt = normalizePrompt(sysPrompt, DEFAULT_SYS_PROMPT);
   const effectiveUserPrompt = normalizePrompt(userPrompt, DEFAULT_USER_PROMPT);
   const prompt = getAIModelPrompt(text, effectiveUserPrompt, targetLanguage, sourceLanguage, params.fullText);
 
   const key = requireApiKey("xAI Grok", apiKey);
 
-  const response = await fetch("https://api.x.ai/v1/chat/completions", {
+  // Use proxy for CORS bypass
+  const apiUrl = useRelay ? PROXY_ENDPOINTS.xai : "https://api.x.ai/v1/chat/completions";
+
+  const response = await fetch(apiUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${key}`,
+      ...(useRelay ? {} : { Authorization: `Bearer ${key}` }),
     },
-    body: JSON.stringify({
-      messages: [
-        { role: "system", content: effectiveSysPrompt },
-        { role: "user", content: prompt },
-      ],
-      model: model || defaultConfigs.xai.model,
-      temperature: normalizeNumber(temperature, defaultConfigs.xai.temperature),
-      stream: false,
-    }),
+    body: JSON.stringify(
+      useRelay
+        ? {
+            apiKey,
+            messages: [
+              { role: "system", content: effectiveSysPrompt },
+              { role: "user", content: prompt },
+            ],
+            model: model || defaultConfigs.xai.model,
+            temperature: normalizeNumber(temperature, defaultConfigs.xai.temperature),
+            stream: false,
+          }
+        : {
+            messages: [
+              { role: "system", content: effectiveSysPrompt },
+              { role: "user", content: prompt },
+            ],
+            model: model || defaultConfigs.xai.model,
+            temperature: normalizeNumber(temperature, defaultConfigs.xai.temperature),
+            stream: false,
+          },
+    ),
     signal: params.signal,
   });
 

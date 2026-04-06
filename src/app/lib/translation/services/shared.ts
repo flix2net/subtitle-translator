@@ -13,6 +13,9 @@ export const useLocalApi = process.env.NODE_ENV === "development" || process.env
 export const PROXY_ENDPOINTS = {
   deepl: useLocalApi ? "/api/deepl" : "https://api-edgeone.newzone.top/api/deepl",
   nvidia: useLocalApi ? "/api/nvidia" : "https://api-edgeone.newzone.top/api/nvidia",
+  mistral: useLocalApi ? "/api/mistral" : "https://api-edgeone.newzone.top/api/mistral",
+  cohere: useLocalApi ? "/api/cohere" : "https://api-edgeone.newzone.top/api/cohere",
+  xai: useLocalApi ? "/api/xai" : "https://api-edgeone.newzone.top/api/xai",
 } as const;
 
 // Third-party proxy services (community-maintained endpoints)
