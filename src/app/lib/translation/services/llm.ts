@@ -4,7 +4,7 @@ import type { TranslationService } from "../types";
 import { DEFAULT_SYS_PROMPT, DEFAULT_USER_PROMPT, defaultConfigs } from "../config";
 import { getAIModelPrompt, getLanguageName } from "../utils";
 
-import { getErrorMessage, normalizeNumber, requireApiKey, requireUrl, PROXY_ENDPOINTS, THIRD_PARTY_ENDPOINTS, getOpenAICompatContent, getClaudeContent } from "./shared";
+import { getErrorMessage, normalizeNumber, requireApiKey, requireUrl, PROXY_ENDPOINTS, THIRD_PARTY_ENDPOINTS, getOpenAICompatContent, getClaudeContent, useLocalApi } from "./shared";
 
 const normalizePrompt = (value: string | undefined, fallback: string) => (typeof value === "string" && value.trim() ? value : fallback);
 
@@ -356,11 +356,12 @@ export const nvidia: TranslationService = async (params) => {
 
   const key = requireApiKey("Nvidia", apiKey);
 
-  // If URL starts with http, call it directly (OpenAI-compatible)
-  // Otherwise use proxy for CORS
-  const isDirectUrl = effectiveUrl.startsWith("http");
+  // On static builds (GitHub Pages), always use proxy to avoid CORS
+  // In dev/Docker mode, allow direct API calls if user provides custom URL
+  const useProxy = !useLocalApi || !effectiveUrl.startsWith("http");
 
-  if (isDirectUrl) {
+  if (!useProxy) {
+    // Direct API call (dev/Docker with custom URL)
     const response = await fetch(effectiveUrl, {
       method: "POST",
       headers: {
@@ -377,7 +378,7 @@ export const nvidia: TranslationService = async (params) => {
     }
     return getOpenAICompatContent(data, "Nvidia");
   } else {
-    // Proxy call to default Nvidia API (avoids CORS in browser)
+    // Proxy call (GitHub Pages or no custom URL)
     const response = await fetch(PROXY_ENDPOINTS.nvidia, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -480,17 +481,19 @@ export const mistral: TranslationService = async (params) => {
 
   const key = requireApiKey("Mistral AI", apiKey);
 
-  // Use proxy for CORS bypass
-  const apiUrl = useRelay ? PROXY_ENDPOINTS.mistral : "https://api.mistral.ai/v1/chat/completions";
+  // On static builds (GitHub Pages), always use proxy to avoid CORS
+  const useProxy = !useLocalApi;
+
+  const apiUrl = useProxy ? PROXY_ENDPOINTS.mistral : "https://api.mistral.ai/v1/chat/completions";
 
   const response = await fetch(apiUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(useRelay ? {} : { Authorization: `Bearer ${key}` }),
+      ...(useProxy ? {} : { Authorization: `Bearer ${key}` }),
     },
     body: JSON.stringify(
-      useRelay
+      useProxy
         ? {
             apiKey,
             messages: [
@@ -529,17 +532,19 @@ export const cohere: TranslationService = async (params) => {
 
   const key = requireApiKey("Cohere", apiKey);
 
-  // Use proxy for CORS bypass
-  const apiUrl = useRelay ? PROXY_ENDPOINTS.cohere : "https://api.cohere.ai/v2/chat";
+  // On static builds (GitHub Pages), always use proxy to avoid CORS
+  const useProxy = !useLocalApi;
+
+  const apiUrl = useProxy ? PROXY_ENDPOINTS.cohere : "https://api.cohere.ai/v2/chat";
 
   const response = await fetch(apiUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(useRelay ? {} : { Authorization: `Bearer ${key}` }),
+      ...(useProxy ? {} : { Authorization: `Bearer ${key}` }),
     },
     body: JSON.stringify(
-      useRelay
+      useProxy
         ? {
             apiKey,
             messages: [
@@ -584,17 +589,19 @@ export const xai: TranslationService = async (params) => {
 
   const key = requireApiKey("xAI Grok", apiKey);
 
-  // Use proxy for CORS bypass
-  const apiUrl = useRelay ? PROXY_ENDPOINTS.xai : "https://api.x.ai/v1/chat/completions";
+  // On static builds (GitHub Pages), always use proxy to avoid CORS
+  const useProxy = !useLocalApi;
+
+  const apiUrl = useProxy ? PROXY_ENDPOINTS.xai : "https://api.x.ai/v1/chat/completions";
 
   const response = await fetch(apiUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(useRelay ? {} : { Authorization: `Bearer ${key}` }),
+      ...(useProxy ? {} : { Authorization: `Bearer ${key}` }),
     },
     body: JSON.stringify(
-      useRelay
+      useProxy
         ? {
             apiKey,
             messages: [
