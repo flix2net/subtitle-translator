@@ -6,6 +6,8 @@ interface NvidiaRequest {
   model: string;
   temperature?: number;
   top_p?: number;
+  max_tokens?: number;
+  stream?: boolean;
   chat_template_kwargs?: Record<string, unknown>;
   reasoning_effort?: string;
 }
@@ -15,27 +17,31 @@ const NVIDIA_API_URL = "https://integrate.api.nvidia.com/v1/chat/completions";
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as NvidiaRequest;
-    const { apiKey, messages, model, temperature, top_p, chat_template_kwargs, reasoning_effort } = body;
+    const { apiKey, messages, model, temperature, top_p, max_tokens, stream, chat_template_kwargs, reasoning_effort } = body;
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: "Missing required parameter: messages" }, { status: 400 });
     }
 
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-    if (apiKey?.trim()) {
-      headers.Authorization = `Bearer ${apiKey}`;
+    if (!apiKey?.trim()) {
+      return NextResponse.json({ error: "Missing Nvidia API key" }, { status: 401 });
     }
 
-    // Build request body with optional thinking parameters
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey.trim()}`,
+    };
+
+    // Build request body with optional parameters
     const requestBody: Record<string, unknown> = {
       messages,
       model,
+      stream: stream ?? false,
     };
 
     if (temperature !== undefined) requestBody.temperature = temperature;
     if (top_p !== undefined) requestBody.top_p = top_p;
+    if (max_tokens !== undefined) requestBody.max_tokens = max_tokens;
     if (chat_template_kwargs !== undefined) requestBody.chat_template_kwargs = chat_template_kwargs;
     if (reasoning_effort !== undefined) requestBody.reasoning_effort = reasoning_effort;
 
@@ -47,16 +53,14 @@ export async function POST(req: NextRequest) {
 
     // Get response as text first to handle non-JSON responses
     const responseText = await response.text();
-    // Try to parse as JSON
     let data;
     try {
       data = JSON.parse(responseText);
     } catch {
-      // Response is not valid JSON (likely an HTML error page)
       console.error("Nvidia API returned non-JSON response:", responseText.substring(0, 500));
       return NextResponse.json(
         {
-          error: `Nvidia API returned invalid response (HTTP ${response.status}). Check your API key.`,
+          error: `Nvidia API returned invalid response (HTTP ${response.status}). Check your API key and model ID.`,
           details: responseText.substring(0, 300),
         },
         { status: 502 },
@@ -69,12 +73,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (data.choices?.[0]?.message?.content) {
-      const isMinimax = model.toLowerCase().includes("minimax-m2");
-
-      if (isMinimax) {
+      const modelLower = model.toLowerCase();
+      // Strip <think> tags for thinking models
+      if (modelLower.includes("thinking") || modelLower.includes("minimax")) {
         let content = data.choices[0].message.content;
-        // Strip <think>...</think> tags and everything inside them
-        // Use a non-greedy regex to match correctly if multiple tags exist
         content = content.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
         data.choices[0].message.content = content;
       }

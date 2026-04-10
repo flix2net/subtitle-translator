@@ -252,9 +252,9 @@ export const defaultConfigs = {
   },
   nvidia: {
     url: "https://integrate.api.nvidia.com/v1/chat/completions",
-    apiKey: "",
-    model: "meta/llama-3.3-70b-instruct",
-    temperature: 0.2,
+    apiKey: process.env.NEXT_PUBLIC_NVIDIA_API_KEY || "",
+    model: "qwen/qwen3-next-80b-a3b-instruct",
+    temperature: 0.3,
     batchSize: 20,
     contextWindow: 50,
     enableThinking: false,

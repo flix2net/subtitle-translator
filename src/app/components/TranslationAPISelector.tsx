@@ -10,11 +10,24 @@ const URL_SUPPORTED_SERVICES = ["nvidia", "libretranslate", "llm", "deeplx", "de
 // Model presets for popular LLM providers
 const MODEL_PRESETS: Record<string, { label: string; value: string }[]> = {
   nvidia: [
+    // ⭐ Qwen Translation Models (Recommended)
+    { label: "⭐ qwen/qwen3-next-80b-a3b-instruct", value: "qwen/qwen3-next-80b-a3b-instruct" },
+    { label: "⭐ qwen/qwen3-next-80b-a3b-thinking", value: "qwen/qwen3-next-80b-a3b-thinking" },
+    { label: "⭐ qwen/qwen3.5-397b-a17b", value: "qwen/qwen3.5-397b-a17b" },
+    // Qwen Fast Models
+    { label: "qwen/qwen3.5-122b-a10b", value: "qwen/qwen3.5-122b-a10b" },
+    { label: "qwen/qwen2.5-7b-instruct", value: "qwen/qwen2.5-7b-instruct" },
+    { label: "qwen/qwen2-7b-instruct", value: "qwen/qwen2-7b-instruct" },
+    // Google Gemma
+    { label: "google/gemma-3-27b-it", value: "google/gemma-3-27b-it" },
+    { label: "google/gemma-4-31b-it", value: "google/gemma-4-31b-it" },
+    // Meta Llama
     { label: "meta/llama-3.3-70b-instruct", value: "meta/llama-3.3-70b-instruct" },
-    { label: "meta/llama-3.1-405b-instruct", value: "meta/llama-3.1-405b-instruct" },
-    { label: "mistralai/mistral-large-2411", value: "mistralai/mistral-large-2411" },
+    { label: "meta/llama-nemotron-super-120b-a12b", value: "meta/llama-nemotron-super-120b-a12b" },
+    // DeepSeek
     { label: "deepseek-ai/deepseek-v3.2", value: "deepseek-ai/deepseek-v3.2" },
-    { label: "google/gemma-2b", value: "google/gemma-2b" },
+    // Mistral
+    { label: "mistralai/mistral-large-2411", value: "mistralai/mistral-large-2411" },
   ],
   mistral: [
     { label: "mistral-large-latest", value: "mistral-large-latest" },
@@ -71,6 +84,15 @@ const TranslationAPISelector = ({ translationMethod, setTranslationMethod, confi
 
   const modelPresets = MODEL_PRESETS[translationMethod];
 
+  // API key help links for popular services
+  const apiKeyLinks: Record<string, { label: string; url: string }> = {
+    nvidia: { label: "Get free Nvidia NIM API key", url: "https://build.nvidia.com/settings/api-keys" },
+    deepseek: { label: "Get DeepSeek API key", url: "https://platform.deepseek.com/api_keys" },
+    openai: { label: "Get OpenAI API key", url: "https://platform.openai.com/api-keys" },
+    claude: { label: "Get Anthropic API key", url: "https://console.anthropic.com/settings/keys" },
+    gemini: { label: "Get Google AI Studio key", url: "https://aistudio.google.com/app/apikeys" },
+  };
+
   return (
     <Form.Item label={t("translationAPI")} className="!mt-2">
       <Space.Compact className="w-full">
@@ -88,6 +110,18 @@ const TranslationAPISelector = ({ translationMethod, setTranslationMethod, confi
           </Tooltip>
         )}
       </Space.Compact>
+
+      {/* API key help link */}
+      {apiKeyLinks[translationMethod] && (
+        <div className="mt-1 text-xs">
+          <a href={apiKeyLinks[translationMethod].url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600">
+            🔑 {apiKeyLinks[translationMethod].label}
+          </a>
+          {translationMethod === "nvidia" && (
+            <span className="ml-2 text-green-500 font-semibold">✨ Free Tier: 5,000 credits</span>
+          )}
+        </div>
+      )}
 
       {/* URL endpoint for services that support it */}
       {config?.url !== undefined && URL_SUPPORTED_SERVICES.includes(translationMethod) && (

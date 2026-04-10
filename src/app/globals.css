@@ -26,3 +26,123 @@ body {
   outline: 2px solid #1668dc;
   outline-offset: 2px;
 }
+
+/* === Glassmorphism Theme Enhancements === */
+
+/* Animated gradient background for dark mode */
+html.dark body {
+  background: linear-gradient(135deg, #0a0a0f 0%, #0f1020 50%, #0a0a1a 100%);
+  position: relative;
+}
+
+html.dark body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(74, 158, 255, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+  animation: gradientShift 20s ease-in-out infinite alternate;
+}
+
+@keyframes gradientShift {
+  0% { opacity: 0.6; transform: scale(1); }
+  100% { opacity: 1; transform: scale(1.05); }
+}
+
+/* Glass effect for cards and panels */
+.glass-effect {
+  background: rgba(20, 20, 35, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+}
+
+/* Ant Design card glass override */
+html.dark .ant-card {
+  background: rgba(20, 20, 35, 0.6) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 16px !important;
+}
+
+html.dark .ant-card-head {
+  background: rgba(10, 10, 15, 0.5) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+html.dark .ant-input,
+html.dark .ant-input-textarea textarea {
+  background: rgba(10, 10, 15, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #e2e8f0 !important;
+}
+
+html.dark .ant-input:focus,
+html.dark .ant-input-textarea textarea:focus {
+  border-color: #4a9eff !important;
+  box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.2) !important;
+}
+
+/* Select dropdown glass effect */
+html.dark .ant-select-dropdown {
+  background: rgba(20, 20, 35, 0.9) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Button glow effects */
+html.dark .ant-btn-primary {
+  background: linear-gradient(135deg, #4a9eff, #8b5cf6) !important;
+  border: none !important;
+  box-shadow: 0 0 20px rgba(74, 158, 255, 0.3) !important;
+}
+
+html.dark .ant-btn-primary:hover {
+  box-shadow: 0 0 30px rgba(74, 158, 255, 0.5) !important;
+}
+
+/* Progress bar gradient */
+html.dark .ant-progress-bg {
+  background: linear-gradient(90deg, #4a9eff, #8b5cf6) !important;
+}
+
+/* Tag glass effect */
+html.dark .ant-tag {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Scrollbar styling */
+html.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html.dark ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Smooth transitions for theme switching */
+* {
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
