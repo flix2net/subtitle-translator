@@ -47,8 +47,17 @@ const isRetryableError = (error: unknown): boolean => {
   if (isAuthError(error)) return false;
 
   const status = (error as { status?: number })?.status;
+  const message = ((error as Error)?.message || "").toLowerCase();
+
   // Retry on: no status (network error), 5xx server errors, 429 rate limit
-  return !status || status >= 500 || status === 429;
+  if (!status || status >= 500 || status === 429) return true;
+
+  // Also check message for rate limit indicators
+  if (message.includes("rate limit") || message.includes("too many requests") || message.includes("throttl")) {
+    return true;
+  }
+
+  return false;
 };
 
 /**
@@ -76,6 +85,16 @@ export const getRetryConfig = (translationMethod: string, userConfig?: UserRetry
         ...baseConfig,
         minTimeout: 2000,
         maxTimeout: 60000,
+      };
+
+    case "nvidia":
+      // Nvidia NIM free tier has stricter rate limits
+      return {
+        ...baseConfig,
+        retries: Math.max(userRetries, 5), // At least 5 retries for rate limits
+        minTimeout: 3000, // 3s minimum between retries
+        maxTimeout: 60000, // 60s maximum wait
+        factor: 2.5, // More aggressive backoff
       };
 
     case "deeplx":

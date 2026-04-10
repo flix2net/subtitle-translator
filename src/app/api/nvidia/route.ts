@@ -69,6 +69,22 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       console.error("Nvidia API error:", data);
+
+      // Handle rate limiting with helpful error message
+      if (response.status === 429) {
+        const retryAfter = response.headers.get("Retry-After");
+        const waitTime = retryAfter ? ` Try again in ${retryAfter}s.` : "";
+        return NextResponse.json(
+          {
+            error: `Rate limit exceeded.${waitTime} Reduce batch size or wait between requests. Free tier: ~5 requests/minute.`,
+            status: 429,
+            retryAfter: retryAfter ? parseInt(retryAfter) : null,
+            ...data,
+          },
+          { status: 429 },
+        );
+      }
+
       return NextResponse.json(data, { status: response.status });
     }
 

@@ -255,8 +255,9 @@ export const defaultConfigs = {
     apiKey: process.env.NEXT_PUBLIC_NVIDIA_API_KEY || "",
     model: "qwen/qwen3-next-80b-a3b-instruct",
     temperature: 0.3,
-    batchSize: 20,
-    contextWindow: 50,
+    batchSize: 5,
+    contextWindow: 20,
+    delayTime: 2000,
     enableThinking: false,
   },
   mistral: {
